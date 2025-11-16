@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>شرطة ريسبكت – تحديث مركز العمليات للشرطة</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- انترو بسيط يختفي بعد الدخول -->
+    <div id="intro-screen" class="intro-overlay">
+      <div class="intro-card">
+        <h1>شرطة ريسبكت</h1>
+        <p>تحديث مركز العمليات للشرطة</p>
+        <button id="intro-enter-btn" class="btn btn-primary">
+          دخول إلى لوحة العمليات
+        </button>
+      </div>
+    </div>
+
+    <header class="app-header">
+      <h2>تحديث مركز العمليات للشرطة</h2>
+    </header>
+
+    <main class="app-main">
+
+      <!-- بيانات أساسية -->
+      <section class="card">
+        <h3>بيانات العمليات</h3>
+        <div class="grid-2">
+          <div class="field">
+            <label>اسم العمليات (الاسم + الكود)</label>
+            <div class="flex">
+              <input id="opName" class="input" placeholder="اسم العمليات" />
+              <input id="opCode" class="input input-small" placeholder="الكود" />
+            </div>
+          </div>
+          <div class="field">
+            <label>نائب مركز العمليات (الاسم + الكود)</label>
+            <div class="flex">
+              <input id="opDeputyName" class="input" placeholder="الاسم" />
+              <input id="opDeputyCode" class="input input-small" placeholder="الكود" />
+            </div>
+          </div>
+        </div>
+
+        <hr />
+
+        <div class="grid-2">
+          <div class="field">
+            <label>القيادات (كود)</label>
+            <div class="flex">
+              <input id="leaderCodeInput" class="input" placeholder="كود القيادة" />
+              <button class="btn btn-success" id="addLeaderBtn">أضف</button>
+            </div>
+            <div id="leadersList" class="chips"></div>
+          </div>
+
+          <div class="field">
+            <label>الضباط (كود)</label>
+            <div class="flex">
+              <input id="officerCodeInput" class="input" placeholder="كود الضابط" />
+              <button class="btn btn-success" id="addOfficerBtn">أضف</button>
+            </div>
+            <div id="officersList" class="chips"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label>مسؤول الفترة (الاسم + الكود)</label>
+            <div class="flex">
+              <input id="periodManagerNameInput" class="input" placeholder="الاسم" />
+              <input id="periodManagerCodeInput" class="input input-small" placeholder="الكود" />
+              <button class="btn btn-success" id="addPeriodManagerBtn">أضف</button>
+            </div>
+            <div id="periodManagersList" class="chips"></div>
+          </div>
+
+          <div class="field">
+            <label>ضباط الصف (الاسم + الكود)</label>
+            <div class="flex">
+              <input id="ncoNameInput" class="input" placeholder="الاسم" />
+              <input id="ncoCodeInput" class="input input-small" placeholder="الكود" />
+              <button class="btn btn-success" id="addNcoBtn">أضف</button>
+            </div>
+            <div id="ncosList" class="chips"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- OCR + توزيع -->
+      <section class="card">
+        <h3>توزيع الوحدات + OCR</h3>
+
+        <div class="field">
+          <label>رفع / لصق الصورة (OCR)</label>
+          <div class="ocr-upload-row">
+            <input type="file" id="ocr-image-input" accept="image/*" />
+          </div>
+          <textarea id="ocr-paste-area" class="input textarea"
+            placeholder="يمكنك أيضًا لصق الصورة هنا مباشرة باستخدام Ctrl+V"></textarea>
+          <p class="hint">
+            يفضل رفع/لصق صورة عالية الجودة. أحيانًا ستحتاج لتعديل النتائج يدويًا قبل الإرسال.
+          </p>
+          <div class="progress-row">
+            <progress id="ocr-progress" max="100" value="0"></progress>
+            <span id="ocr-progress-text">0%</span>
+          </div>
+        </div>
+
+        <div class="units-toolbar">
+          <button id="addUnitBtn" class="btn btn-primary">إضافة وحدة جديدة</button>
+          <button id="clearUnitsBtn" class="btn btn-danger">مسح الكل</button>
+        </div>
+
+        <div class="units-table-wrapper">
+          <table class="units-table">
+            <thead>
+              <tr>
+                <th>الكود</th>
+                <th>الحالة</th>
+                <th>الموقع</th>
+                <th>توزيع الوحدات</th>
+                <th>نوع المركبة</th>
+                <th>شريك</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="unitsTableBody">
+              <!-- يُضاف ديناميكياً -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- أزرار الوقت + النتيجة -->
+      <section class="card">
+        <h3>الوقت والنتيجة</h3>
+        <div class="time-row">
+          <button id="startTimeBtn" class="btn btn-secondary">تسجيل وقت الاستلام</button>
+          <span id="startTimeLabel">—</span>
+          <button id="endTimeBtn" class="btn btn-secondary">تسجيل وقت التسليم</button>
+          <span id="endTimeLabel">—</span>
+        </div>
+
+        <div class="result-toolbar">
+          <button id="copyResultBtn" class="btn btn-primary">نسخ</button>
+        </div>
+
+        <div id="finalResult" class="result-box" contenteditable="true">
+          <!-- يتم بناء النص تلقائياً -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast تنبيهات -->
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <!-- مكتبة Tesseract من المجلد المحلي -->
+  <script src="libs/tesseract.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
