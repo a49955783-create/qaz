@@ -35,8 +35,11 @@ let currentUnitIndex = null;
 
 // مودال chip (قيادات - ضباط - مسؤول الفترة - ضباط الصف)
 let chipContext = {
-  type: null // "leader" | "officer" | "supervisor" | "nco"
+  type: null
 };
+
+// وضع OCR: "replace" أو "merge"
+let ocrMode = "replace";
 
 // Toast
 let toastTimeout = null;
@@ -87,7 +90,7 @@ function renderAllChips() {
   renderChips(ncos, "ncosList");
 }
 
-// فتح مودال إدخال قيمة (بدل window.prompt)
+// فتح مودال إدخال قيمة
 function openChipModal(type, title, label, placeholder) {
   chipContext.type = type;
   $("chipModalTitle").textContent = title;
@@ -253,7 +256,6 @@ function openUnitModal(index) {
   $("modalUnitType").value = vehicleTypes.includes(u.type) ? u.type : "لا شي";
   $("modalUnitPartner").value = u.partnerCode || "";
 
-  // استنتاج نوع سبيد يونت من الموقع إذا كان موجود
   let speedSubType = "";
   if (u.type === "سبيد يونت" && u.location) {
     if (u.location.includes("فايبكس")) speedSubType = "فايبكس";
@@ -289,11 +291,9 @@ function wireModal() {
     u.type = $("modalUnitType").value;
     u.partnerCode = $("modalUnitPartner").value.trim();
 
-    // سبيد يونت: ندمج نوعه في الموقع لو مختار
     if (u.type === "سبيد يونت") {
       const sub = $("modalSpeedSubType").value;
       if (sub === "فايبكس" || sub === "موتركس") {
-        // نخلي شكل الموقع مثلاً: "الوسط | فايبكس" أو فقط "فايبكس" لو لا شي
         const baseLoc = u.location && u.location !== "لا شي" ? u.location : "";
         u.location = baseLoc ? `${baseLoc} | ${sub}` : sub;
       }
@@ -306,10 +306,10 @@ function wireModal() {
   };
 }
 
-// وقت الاستلام والتسليم
+// وقت الاستلام والتسليم - بالإنجليزي
 function formatTime(date) {
   if (!date) return "—";
-  return date.toLocaleTimeString("ar-SA", {
+  return date.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit"
   });
@@ -331,7 +331,49 @@ function wireTimeButtons() {
   };
 }
 
-// OCR (توزيع الأكواد فقط على حقل الكود في الوحدات)
+// OCR (استبدال/دمج)
+function wireOcrModeToggle() {
+  const replaceBtn = $("ocrModeReplace");
+  const mergeBtn = $("ocrModeMerge");
+
+  [replaceBtn, mergeBtn].forEach(btn => {
+    btn.addEventListener("click", () => {
+      const mode = btn.dataset.mode;
+      ocrMode = mode;
+
+      replaceBtn.classList.remove("active");
+      mergeBtn.classList.remove("active");
+      btn.classList.add("active");
+
+      showToast(mode === "replace" ? "وضع الاستبدال مفعل" : "وضع الدمج مفعل");
+    });
+  });
+}
+
+function applyOcrCodesToUnits(codes) {
+  if (!codes.length) {
+    showToast("لم يتم العثور على أكواد");
+    return;
+  }
+
+  if (ocrMode === "replace") {
+    // استبدال كامل
+    units = [];
+  }
+
+  codes.forEach(code => {
+    addUnitRow({
+      code,
+      status: "في الخدمة",
+      location: "لا شي",
+      type: "لا شي"
+    });
+  });
+
+  renderUnitsTable();
+  updateFinalResult();
+}
+
 async function runOcrOnImageFile(file) {
   if (!file) return;
   if (typeof Tesseract === "undefined") {
@@ -357,9 +399,7 @@ async function runOcrOnImageFile(file) {
     const text = data.text || "";
     const codes = text.match(/\d+/g) || [];
 
-    codes.forEach(code => {
-      addUnitRow({ code, status: "في الخدمة", location: "لا شي", type: "لا شي" });
-    });
+    applyOcrCodesToUnits(codes);
 
     $("ocrStatusLabel").textContent = "تم التحليل";
     showToast("تم توزيع الأكواد على القائمة");
@@ -516,6 +556,7 @@ function init() {
   wireChips();
   wireModal();
   wireTimeButtons();
+  wireOcrModeToggle();
   wireOcr();
   wireCopy();
   wireLiveUpdate();
