@@ -29,7 +29,7 @@
       </header>
 
       <section class="grid">
-        <!-- بطاقة معلومات العمليات -->
+        <!-- معلومات العمليات -->
         <section class="card">
           <h3 class="card-title">معلومات العمليات</h3>
           <div class="form-grid">
@@ -78,12 +78,14 @@
           </div>
         </section>
 
-        <!-- بطاقة OCR (تصميم جديد + استبدال/دمج) -->
+        <!-- OCR -->
         <section class="card ocr-card">
           <div class="ocr-header">
             <div>
               <h3 class="card-title">استخراج الأكواد من صورة (OCR)</h3>
-              <p class="ocr-subtitle">ارفع صورة أو ألصق لقطة شاشة وسيتم توزيع الأكواد تلقائيًا على حقل الكود في القائمة.</p>
+              <p class="ocr-subtitle">
+                ارفع صورة أو ألصق لقطة شاشة وسيتم توزيع الأكواد تلقائيًا على حقل الكود في القائمة.
+              </p>
             </div>
             <div class="ocr-mode-toggle">
               <span>وضع توزيع الأكواد:</span>
@@ -157,14 +159,12 @@
                   <th>إجراءات</th>
                 </tr>
               </thead>
-              <tbody id="unitsTableBody">
-                <!-- يملأ عبر JS -->
-              </tbody>
+              <tbody id="unitsTableBody"></tbody>
             </table>
           </div>
         </section>
 
-        <!-- أزرار الوقت -->
+        <!-- الأوقات -->
         <section class="card">
           <h3 class="card-title">وقت الاستلام والتسليم</h3>
           <div class="time-row">
@@ -256,7 +256,7 @@
       </div>
     </div>
 
-    <!-- مودال إدخال عنصر (قيادة / ضابط / الخ) -->
+    <!-- مودال عناصر القيادات/الضباط.. -->
     <div id="chipModal" class="modal hidden">
       <div class="modal-backdrop"></div>
       <div class="modal-dialog">
@@ -278,7 +278,7 @@
     </div>
   </div>
 
-  <!-- Tesseract عبر CDN -->
+  <!-- Tesseract CDN -->
   <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <script src="script.js"></script>
 </body>
