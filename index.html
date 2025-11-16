@@ -3,164 +3,167 @@
 <head>
   <meta charset="UTF-8" />
   <title>شرطة ريسبكت – تحديث مركز العمليات للشرطة</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="app-container">
-
+  <div class="app-root">
     <!-- انترو -->
-    <div id="intro-screen" class="intro-overlay">
+    <section class="intro" id="intro">
       <div class="intro-card">
-        <h1>شرطة ريسبكت</h1>
-        <p>تحديث مركز العمليات للشرطة</p>
-        <button id="intro-enter-btn" class="btn btn-primary">
-          دخول إلى لوحة العمليات
+        <h1 class="intro-title">شرطة ريسبكت</h1>
+        <p class="intro-subtitle">تحديث مركز العمليات للشرطة</p>
+        <button id="enterAppBtn" class="btn btn-primary">
+          فتح لوحة العمليات
         </button>
       </div>
-    </div>
+    </section>
 
-    <header class="app-header">
-      <h2>تحديث مركز العمليات للشرطة</h2>
-    </header>
-
-    <main class="app-main">
-      <!-- بيانات أساسية -->
-      <section class="card">
-        <h3>بيانات العمليات</h3>
-        <div class="grid-2">
-          <div class="field">
-            <label>اسم العمليات (الاسم + الكود)</label>
-            <div class="flex">
-              <input id="opName" class="input" placeholder="اسم العمليات" />
-              <input id="opCode" class="input input-small" placeholder="الكود" />
-            </div>
-          </div>
-          <div class="field">
-            <label>نائب مركز العمليات (الاسم + الكود)</label>
-            <div class="flex">
-              <input id="opDeputyName" class="input" placeholder="الاسم" />
-              <input id="opDeputyCode" class="input input-small" placeholder="الكود" />
-            </div>
-          </div>
+    <!-- المحتوى الرئيسي -->
+    <main class="layout hidden" id="mainLayout">
+      <header class="top-bar">
+        <div class="top-bar-titles">
+          <h2>شرطة ريسبكت</h2>
+          <span class="subtitle">تحديث مركز العمليات للشرطة</span>
         </div>
+      </header>
 
-        <hr />
-
-        <div class="grid-2">
-          <div class="field">
-            <label>القيادات (كود)</label>
-            <div class="flex">
-              <input id="leaderCodeInput" class="input" placeholder="كود القيادة" />
-              <button class="btn btn-success" id="addLeaderBtn">أضف</button>
+      <section class="grid">
+        <!-- بطاقة معلومات العمليات -->
+        <section class="card">
+          <h3 class="card-title">معلومات العمليات</h3>
+          <div class="form-grid">
+            <div class="field">
+              <label>اسم العمليات (اسم + كود)</label>
+              <input id="operationsName" class="input" placeholder="مثال: خالد 145" />
             </div>
-            <div id="leadersList" class="chips"></div>
-          </div>
-
-          <div class="field">
-            <label>الضباط (كود)</label>
-            <div class="flex">
-              <input id="officerCodeInput" class="input" placeholder="كود الضابط" />
-              <button class="btn btn-success" id="addOfficerBtn">أضف</button>
+            <div class="field">
+              <label>نائب مركز العمليات (اسم + كود)</label>
+              <input id="operationsDeputy" class="input" placeholder="مثال: عبدالله 126" />
             </div>
-            <div id="officersList" class="chips"></div>
           </div>
-        </div>
 
-        <div class="grid-2">
-          <div class="field">
-            <label>مسؤول الفترة (الاسم + الكود)</label>
-            <div class="flex">
-              <input id="periodManagerNameInput" class="input" placeholder="الاسم" />
-              <input id="periodManagerCodeInput" class="input input-small" placeholder="الكود" />
-              <button class="btn btn-success" id="addPeriodManagerBtn">أضف</button>
+          <div class="chip-list">
+            <div class="chip-group">
+              <div class="chip-header">
+                <span>القيادات (كود)</span>
+                <button id="addLeaderBtn" class="btn btn-ghost">إضافة</button>
+              </div>
+              <div id="leadersList" class="chip-container"></div>
             </div>
-            <div id="periodManagersList" class="chips"></div>
-          </div>
 
-          <div class="field">
-            <label>ضباط الصف (الاسم + الكود)</label>
-            <div class="flex">
-              <input id="ncoNameInput" class="input" placeholder="الاسم" />
-              <input id="ncoCodeInput" class="input input-small" placeholder="الكود" />
-              <button class="btn btn-success" id="addNcoBtn">أضف</button>
+            <div class="chip-group">
+              <div class="chip-header">
+                <span>الضباط (كود)</span>
+                <button id="addOfficerBtn" class="btn btn-ghost">إضافة</button>
+              </div>
+              <div id="officersList" class="chip-container"></div>
             </div>
-            <div id="ncosList" class="chips"></div>
-          </div>
-        </div>
-      </section>
 
-      <!-- OCR + توزيع الوحدات -->
-      <section class="card">
-        <h3>توزيع الوحدات + OCR</h3>
+            <div class="chip-group">
+              <div class="chip-header">
+                <span>مسؤول الفترة (اسم + كود)</span>
+                <button id="addSupervisorBtn" class="btn btn-ghost">إضافة</button>
+              </div>
+              <div id="supervisorList" class="chip-container"></div>
+            </div>
 
-        <div class="field">
-          <label>رفع / لصق الصورة (OCR)</label>
-          <div class="ocr-upload-row">
-            <input type="file" id="ocr-image-input" accept="image/*" />
+            <div class="chip-group">
+              <div class="chip-header">
+                <span>ضباط الصف (كود)</span>
+                <button id="addNcoBtn" class="btn btn-ghost">إضافة</button>
+              </div>
+              <div id="ncosList" class="chip-container"></div>
+            </div>
           </div>
-          <textarea id="ocr-paste-area" class="input textarea"
-            placeholder="يمكنك أيضًا لصق الصورة هنا مباشرة باستخدام Ctrl+V"></textarea>
+        </section>
+
+        <!-- بطاقة OCR -->
+        <section class="card">
+          <h3 class="card-title">استخراج الأكواد من صورة (OCR)</h3>
+          <div class="field">
+            <label>رفع صورة</label>
+            <input id="ocrFileInput" type="file" accept=".png,.jpg,.jpeg,.webp" />
+          </div>
+          <div class="field">
+            <label>أو لصق صورة داخل هذا المربع (Ctrl+V)</label>
+            <div id="pasteArea" class="paste-area">
+              ألصق صورة هنا من الحافظة
+            </div>
+          </div>
           <p class="hint">
             يفضل رفع/لصق صورة عالية الجودة. أحيانًا ستحتاج لتعديل النتائج يدويًا قبل الإرسال.
           </p>
           <div class="progress-row">
-            <progress id="ocr-progress" max="100" value="0"></progress>
-            <span id="ocr-progress-text">0%</span>
+            <span id="ocrStatusLabel">جاهز</span>
+            <div class="progress">
+              <div id="ocrProgressBar" class="progress-bar"></div>
+            </div>
+            <span id="ocrProgressValue">0%</span>
           </div>
-        </div>
+        </section>
 
-        <div class="units-toolbar">
-          <button id="addUnitBtn" class="btn btn-primary">إضافة وحدة جديدة</button>
-          <button id="clearUnitsBtn" class="btn btn-danger">مسح الكل</button>
-        </div>
+        <!-- جدول الوحدات -->
+        <section class="card full-width">
+          <div class="card-header-row">
+            <h3 class="card-title">قائمة الوحدات</h3>
+            <div class="card-actions">
+              <button id="addUnitRowBtn" class="btn btn-secondary">إضافة سطر جديد</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="units-table">
+              <thead>
+                <tr>
+                  <th>الكود</th>
+                  <th>الحالة</th>
+                  <th>الموقع</th>
+                  <th>نوع المركبة</th>
+                  <th>شريك</th>
+                  <th>إجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="unitsTableBody">
+                <!-- يملأ عبر JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        <div class="units-table-wrapper">
-          <table class="units-table">
-            <thead>
-              <tr>
-                <th>الكود</th>
-                <th>الحالة</th>
-                <th>الموقع</th>
-                <th>توزيع الوحدات</th>
-                <th>نوع المركبة</th>
-                <th>شريك</th>
-                <th>إجراءات</th>
-              </tr>
-            </thead>
-            <tbody id="unitsTableBody"></tbody>
-          </table>
-        </div>
-      </section>
+        <!-- أزرار الوقت -->
+        <section class="card">
+          <h3 class="card-title">وقت الاستلام والتسليم</h3>
+          <div class="time-row">
+            <button id="startTimeBtn" class="btn btn-primary">بدء وقت الاستلام</button>
+            <span id="startTimeDisplay" class="time-display">—</span>
+          </div>
+          <div class="time-row">
+            <button id="endTimeBtn" class="btn btn-primary">إنهاء وقت التسليم</button>
+            <span id="endTimeDisplay" class="time-display">—</span>
+          </div>
+        </section>
 
-      <!-- الوقت + النتيجة -->
-      <section class="card">
-        <h3>الوقت والنتيجة</h3>
-        <div class="time-row">
-          <button id="startTimeBtn" class="btn btn-secondary">تسجيل وقت الاستلام</button>
-          <span id="startTimeLabel">—</span>
-          <button id="endTimeBtn" class="btn btn-secondary">تسجيل وقت التسليم</button>
-          <span id="endTimeLabel">—</span>
-        </div>
-
-        <div class="result-toolbar">
-          <button id="copyResultBtn" class="btn btn-primary">نسخ</button>
-        </div>
-
-        <div id="finalResult" class="result-box" contenteditable="true"></div>
+        <!-- النتيجة النهائية -->
+        <section class="card full-width">
+          <div class="card-header-row">
+            <h3 class="card-title">النتيجة النهائية</h3>
+            <button id="copyResultBtn" class="btn btn-ghost">نسخ النص</button>
+          </div>
+          <textarea id="finalResult" class="result-box"></textarea>
+        </section>
       </section>
     </main>
 
     <!-- Toast -->
-    <div id="toast" class="toast hidden"></div>
+    <div id="toast" class="toast"></div>
 
     <!-- مودال تعديل الوحدة -->
     <div id="unitModal" class="modal hidden">
       <div class="modal-backdrop"></div>
-      <div class="modal-content">
+      <div class="modal-dialog">
         <div class="modal-header">
           <h4>تعديل الوحدة</h4>
-          <button id="unitModalClose" class="modal-close">×</button>
+          <button id="closeModalBtn" class="btn-icon">×</button>
         </div>
         <div class="modal-body">
           <div class="field">
@@ -172,7 +175,9 @@
             <select id="modalUnitStatus" class="input">
               <option>في الخدمة</option>
               <option>مشغول</option>
-              <option>خارج الخدمة</option>
+              <option>مشغول - اختبار</option>
+              <option>مشغول - تدريب</option>
+              <option>مشغول حالة موجه 10</option>
             </select>
           </div>
           <div class="field">
@@ -180,24 +185,22 @@
             <select id="modalUnitLocation" class="input">
               <option>لا شي</option>
               <option>الشمال</option>
-              <option>الجنوب</option>
               <option>الوسط</option>
+              <option>الشرق</option>
+              <option>الجنوب</option>
+              <option>ساندي</option>
               <option>بوليتو</option>
-              <option>فايبكس</option>
             </select>
           </div>
           <div class="field">
             <label>نوع المركبة</label>
             <select id="modalUnitType" class="input">
               <option>لا شي</option>
+              <option>عادي</option>
               <option>سبيد يونت</option>
               <option>دباب</option>
               <option>الهلي</option>
             </select>
-          </div>
-          <div class="field">
-            <label>توزيع الوحدات</label>
-            <input id="modalUnitAssignment" class="input" />
           </div>
           <div class="field">
             <label>شريك (كود)</label>
@@ -205,15 +208,15 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button id="unitModalCancel" class="btn btn-secondary">إلغاء</button>
-          <button id="unitModalSave" class="btn btn-primary">حفظ</button>
+          <button id="saveUnitBtn" class="btn btn-primary">حفظ</button>
+          <button id="cancelUnitBtn" class="btn btn-ghost">إلغاء</button>
         </div>
       </div>
     </div>
-
   </div>
 
-  <script src="libs/tesseract.min.js"></script>
+  <!-- Tesseract عبر CDN -->
+  <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
