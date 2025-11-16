@@ -1,4 +1,3 @@
-// ثوابت
 const $ = id => document.getElementById(id);
 
 const statusOptions = [
@@ -21,27 +20,20 @@ const locationOptions = [
 
 const vehicleTypes = ["لا شي", "عادي", "سبيد يونت", "دباب", "الهلي"];
 
-// بيانات
 let leaders = [];
 let officers = [];
-let supervisors = []; // اسم + كود
+let supervisors = [];
 let ncos = [];
 let units = [];
 let startTime = null;
 let endTime = null;
 
-// مودالات
 let currentUnitIndex = null;
 
-// مودال chip (قيادات - ضباط - مسؤول الفترة - ضباط الصف)
-let chipContext = {
-  type: null
-};
+let chipContext = { type: null };
 
-// وضع OCR: "replace" أو "merge"
 let ocrMode = "replace";
 
-// Toast
 let toastTimeout = null;
 function showToast(message) {
   const toast = $("toast");
@@ -53,7 +45,6 @@ function showToast(message) {
   }, 2000);
 }
 
-// Intro
 function wireIntro() {
   $("enterAppBtn").addEventListener("click", () => {
     $("intro").classList.add("hidden");
@@ -61,7 +52,6 @@ function wireIntro() {
   });
 }
 
-// Chips helpers
 function renderChips(list, containerId) {
   const container = $(containerId);
   container.innerHTML = "";
@@ -90,7 +80,6 @@ function renderAllChips() {
   renderChips(ncos, "ncosList");
 }
 
-// فتح مودال إدخال قيمة
 function openChipModal(type, title, label, placeholder) {
   chipContext.type = type;
   $("chipModalTitle").textContent = title;
@@ -142,7 +131,6 @@ function wireChipModal() {
   $("chipSaveBtn").onclick = applyChipModalValue;
 }
 
-// ربط أزرار الـ Chips
 function wireChips() {
   $("addLeaderBtn").onclick = () =>
     openChipModal("leader", "إضافة قيادة", "كود القيادة", "مثال: 101");
@@ -162,7 +150,6 @@ function wireChips() {
     openChipModal("nco", "إضافة ضابط صف", "كود ضابط الصف", "مثال: 141");
 }
 
-// وحدات
 function addUnitRow(initial = {}) {
   units.push({
     code: initial.code || "",
@@ -185,15 +172,16 @@ function buildClickableCell(text, onClick) {
 
 function renderUnitsTable() {
   const tbody = $("unitsTableBody");
+  if (!tbody) return;
   tbody.innerHTML = "";
 
   units.forEach((u, index) => {
     const tr = document.createElement("tr");
 
     tr.appendChild(buildClickableCell(u.code || "", () => openUnitModal(index)));
-    tr.appendChild(buildClickableCell(u.status, () => openUnitModal(index)));
-    tr.appendChild(buildClickableCell(u.location, () => openUnitModal(index)));
-    tr.appendChild(buildClickableCell(u.type, () => openUnitModal(index)));
+    tr.appendChild(buildClickableCell(u.status || "", () => openUnitModal(index)));
+    tr.appendChild(buildClickableCell(u.location || "", () => openUnitModal(index)));
+    tr.appendChild(buildClickableCell(u.type || "", () => openUnitModal(index)));
     tr.appendChild(buildClickableCell(u.partnerCode || "-", () => openUnitModal(index)));
 
     const actionsTd = document.createElement("td");
@@ -234,7 +222,6 @@ function renderUnitsTable() {
   });
 }
 
-// Modal الوحدة
 function updateSpeedFieldVisibility(typeValue) {
   const field = $("speedTypeField");
   if (typeValue === "سبيد يونت") {
@@ -306,7 +293,6 @@ function wireModal() {
   };
 }
 
-// وقت الاستلام والتسليم - بالإنجليزي
 function formatTime(date) {
   if (!date) return "—";
   return date.toLocaleTimeString("en-US", {
@@ -331,7 +317,6 @@ function wireTimeButtons() {
   };
 }
 
-// OCR (استبدال/دمج)
 function wireOcrModeToggle() {
   const replaceBtn = $("ocrModeReplace");
   const mergeBtn = $("ocrModeMerge");
@@ -357,7 +342,6 @@ function applyOcrCodesToUnits(codes) {
   }
 
   if (ocrMode === "replace") {
-    // استبدال كامل
     units = [];
   }
 
@@ -440,7 +424,23 @@ function wireOcr() {
   });
 }
 
-// النتيجة النهائية
+function fmtUnitsPartners(arr) {
+  return (
+    arr
+      .map(u => {
+        const codePart = u.partnerCode
+          ? `${u.code} + ${u.partnerCode}`
+          : `${u.code}`;
+        const locationPart =
+          u.location && u.location !== "لا شي" ? ` | ${u.location}` : "";
+        const statusPart =
+          u.status && u.status !== "في الخدمة" ? ` | ${u.status}` : "";
+        return `${codePart}${locationPart}${statusPart}`;
+      })
+      .join("\n") || "-"
+  );
+}
+
 function buildResultText() {
   let lines = [];
 
@@ -490,34 +490,20 @@ function buildResultText() {
     }
   });
 
-  const fmtPartners = arr =>
-    arr
-      .map(u => {
-        const codePart = u.partnerCode
-          ? `${u.code} + ${u.partnerCode}`
-          : `${u.code}`;
-        const locationPart =
-          u.location && u.location !== "لا شي" ? ` | ${u.location}` : "";
-        const statusPart =
-          u.status && u.status !== "في الخدمة" ? ` | ${u.status}` : "";
-        return `${codePart}${locationPart}${statusPart}`;
-      })
-      .join("\n") || "-";
-
   lines.push("توزيع الوحدات");
   lines.push(normalUnits.join("\n") || "-");
   lines.push("");
 
   lines.push("وحدات سبيد يونت");
-  lines.push(fmtPartners(speedUnits));
+  lines.push(fmtUnitsPartners(speedUnits));
   lines.push("");
 
   lines.push("وحدات دباب");
-  lines.push(fmtPartners(bikeUnits));
+  lines.push(fmtUnitsPartners(bikeUnits));
   lines.push("");
 
   lines.push("وحدات الهلي");
-  lines.push(fmtPartners(heliUnits));
+  lines.push(fmtUnitsPartners(heliUnits));
   lines.push("");
 
   lines.push(`وقت الاستلام: ${formatTime(startTime)}`);
@@ -528,11 +514,18 @@ function buildResultText() {
   return lines.join("\n");
 }
 
-function updateFinalResult() {
-  $("finalResult").value = buildResultText();
+function autoResizeResult() {
+  const ta = $("finalResult");
+  if (!ta) return;
+  ta.style.height = "auto";
+  ta.style.height = ta.scrollHeight + "px";
 }
 
-// Copy
+function updateFinalResult() {
+  $("finalResult").value = buildResultText();
+  autoResizeResult();
+}
+
 function wireCopy() {
   $("copyResultBtn").onclick = () => {
     const txt = $("finalResult").value;
@@ -543,13 +536,11 @@ function wireCopy() {
   };
 }
 
-// Live update
 function wireLiveUpdate() {
   $("operationsName").addEventListener("input", updateFinalResult);
   $("operationsDeputy").addEventListener("input", updateFinalResult);
 }
 
-// Init
 function init() {
   wireIntro();
   wireChipModal();
@@ -561,7 +552,13 @@ function init() {
   wireCopy();
   wireLiveUpdate();
 
-  addUnitRow(); // سطر مبدئي
+  $("addUnitRowBtn").onclick = () => {
+    addUnitRow();
+    showToast("تمت إضافة سطر جديد");
+  };
+
+  addUnitRow();
+  autoResizeResult();
 }
 
 document.addEventListener("DOMContentLoaded", init);
