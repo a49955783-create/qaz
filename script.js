@@ -1,5 +1,4 @@
-// ==================== Helpers أساسية ====================
-
+// ===== Helpers =====
 function $(id) {
   return document.getElementById(id);
 }
@@ -24,20 +23,25 @@ function formatTime(date) {
   return `${h}:${m} ${ampm}`;
 }
 
-// ==================== بيانات ====================
-
+// ===== بيانات عامّة =====
 let leaders = [];
 let officers = [];
-let periodManagers = []; // {name, code}
-let ncos = [];           // {name, code}
-
-let units = []; // صفوف الوحدات
+let periodManagers = [];
+let ncos = [];
+let units = [];
 
 let startTime = null;
 let endTime = null;
 
-// ==================== انترو ====================
+// مودال تعديل
+let currentUnitIndex = null;
 
+// خيارات
+const statusOptions = ["في الخدمة", "مشغول", "خارج الخدمة"];
+const locationOptions = ["لا شي", "الشمال", "الجنوب", "الوسط", "بوليتو", "فايبكس"];
+const vehicleTypes = ["لا شي", "سبيد يونت", "دباب", "الهلي"];
+
+// ===== Init =====
 document.addEventListener("DOMContentLoaded", () => {
   const intro = $("intro-screen");
   const introBtn = $("intro-enter-btn");
@@ -50,21 +54,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  wireBasicButtons();
-  wireChipButtons();
+  wireChips();
   wireUnits();
   wireTimeButtons();
   wireCopyResult();
   wireOcrInputs();
+  wireModal();
 
-  // إضافة صف واحد افتراضياً
   addUnitRow();
   rebuildResult();
 });
 
-// ==================== الحقول (قيادات / ضباط / مسؤول فترة / ضباط الصف) ====================
-
-function wireChipButtons() {
+// ===== Chips (قيادات / ضباط / مسؤول فترة / ضباط الصف) =====
+function wireChips() {
   $("addLeaderBtn").addEventListener("click", () => {
     const val = $("leaderCodeInput").value.trim();
     if (!val) return;
@@ -121,7 +123,6 @@ function wireChipButtons() {
     rebuildResult();
   });
 
-  // تحديث النتيجة عند تغيير اسم العمليات/النائب
   ["opName", "opCode", "opDeputyName", "opDeputyCode"].forEach((id) => {
     $(id).addEventListener("input", rebuildResult);
   });
@@ -157,23 +158,19 @@ function renderPeopleChips(containerId, arr, onDelete) {
   });
 }
 
-// ==================== الوحدات ====================
-
-const statusOptions = ["في الخدمة", "مشغول", "خارج الخدمة"];
-const locationOptions = ["لا شي", "الشمال", "الجنوب", "الوسط", "بوليتو", "فايبكس"];
-// نوع المركبة – أزلنا "وحدة عادية"
-const vehicleTypes = ["لا شي", "سبيد يونت", "دباب", "الهلي"];
-
+// ===== وحدات =====
 function wireUnits() {
   $("addUnitBtn").addEventListener("click", () => {
     addUnitRow();
     rebuildResult();
+    showToast("تم إضافة وحدة جديدة", "success");
   });
 
   $("clearUnitsBtn").addEventListener("click", () => {
     units = [];
     renderUnitsTable();
     rebuildResult();
+    showToast("تم مسح جميع الوحدات", "warning");
   });
 }
 
@@ -195,47 +192,46 @@ function renderUnitsTable() {
   units.forEach((u, index) => {
     const tr = document.createElement("tr");
 
-    // الكود
     tr.appendChild(buildClickableCell(u.code || "", () => openUnitModal(index)));
-
-    // الحالة
     tr.appendChild(buildClickableCell(u.status, () => openUnitModal(index)));
-
-    // الموقع
     tr.appendChild(buildClickableCell(u.location, () => openUnitModal(index)));
-
-    // توزيع الوحدات
     tr.appendChild(buildClickableCell(u.assignment || "-", () => openUnitModal(index)));
-
-    // نوع المركبة
     tr.appendChild(buildClickableCell(u.type, () => openUnitModal(index)));
+    tr.appendChild(buildClickableCell(u.partnerCode || "-", () => openUnitModal(index)));
 
-    // الشريك
-    tr.appendChild(buildClickableCell(u.partnerCode ? u.partnerCode : "-", () => openUnitModal(index)));
-
-    // إجراءات
     const actionsTd = document.createElement("td");
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "btn btn-secondary";
+    editBtn.textContent = "تعديل";
+    editBtn.addEventListener("click", () => openUnitModal(index));
+
     const delBtn = document.createElement("button");
     delBtn.className = "btn btn-danger";
     delBtn.textContent = "حذف";
+    delBtn.style.marginInlineStart = "4px";
     delBtn.addEventListener("click", () => {
       units.splice(index, 1);
       renderUnitsTable();
       rebuildResult();
+      showToast("تم حذف الوحدة", "warning");
     });
+
     const partnerBtn = document.createElement("button");
     partnerBtn.className = "btn btn-success";
-    partnerBtn.style.marginInlineStart = "4px";
     partnerBtn.textContent = "أضف شريك";
+    partnerBtn.style.marginInlineStart = "4px";
     partnerBtn.addEventListener("click", () => {
       const partner = prompt("أدخل كود الشريك:");
       if (partner) {
         units[index].partnerCode = partner.trim();
         renderUnitsTable();
         rebuildResult();
+        showToast("تم إضافة الشريك", "success");
       }
     });
 
+    actionsTd.appendChild(editBtn);
     actionsTd.appendChild(delBtn);
     actionsTd.appendChild(partnerBtn);
     tr.appendChild(actionsTd);
@@ -252,29 +248,59 @@ function buildClickableCell(text, onClick) {
   return td;
 }
 
-// نافذة تعديل بسيطة (prompt) – عشان ما نثقل عليك بمودال CSS جديد
-function openUnitModal(index) {
-  const u = units[index];
-  const code = prompt("الكود:", u.code || "") ?? u.code;
-  const status = prompt(`الحالة (${statusOptions.join(" / ")}):`, u.status) ?? u.status;
-  const location = prompt(`الموقع (${locationOptions.join(" / ")}):`, u.location) ?? u.location;
-  const assignment = prompt("توزيع الوحدات:", u.assignment || "") ?? u.assignment;
-  const type = prompt(`نوع المركبة (${vehicleTypes.join(" / ")}):`, u.type) ?? u.type;
-  const partner = prompt("كود الشريك (إن وجد):", u.partnerCode || "") ?? u.partnerCode;
+// ===== مودال التعديل =====
+function wireModal() {
+  const modal = $("unitModal");
+  const cancelBtn = $("unitModalCancel");
+  const closeBtn = $("unitModalClose");
+  const saveBtn = $("unitModalSave");
+  const backdrop = modal.querySelector(".modal-backdrop");
 
-  u.code = code.trim();
-  u.status = status.trim();
-  u.location = location.trim();
-  u.assignment = assignment.trim();
-  u.type = type.trim();
-  u.partnerCode = partner.trim();
+  const close = () => {
+    modal.classList.add("hidden");
+    currentUnitIndex = null;
+  };
 
-  renderUnitsTable();
-  rebuildResult();
+  cancelBtn.addEventListener("click", () => {
+    close();
+    showToast("تم إلغاء التعديل", "warning");
+  });
+
+  closeBtn.addEventListener("click", close);
+  backdrop.addEventListener("click", close);
+
+  saveBtn.addEventListener("click", () => {
+    if (currentUnitIndex == null) return;
+    const u = units[currentUnitIndex];
+    u.code = $("modalUnitCode").value.trim();
+    u.status = $("modalUnitStatus").value;
+    u.location = $("modalUnitLocation").value;
+    u.type = $("modalUnitType").value;
+    u.assignment = $("modalUnitAssignment").value.trim();
+    u.partnerCode = $("modalUnitPartner").value.trim();
+
+    renderUnitsTable();
+    rebuildResult();
+    close();
+    showToast("تم حفظ تعديل الوحدة ✅", "success");
+  });
 }
 
-// ==================== الوقت ====================
+function openUnitModal(index) {
+  const u = units[index];
+  currentUnitIndex = index;
 
+  $("modalUnitCode").value = u.code || "";
+  $("modalUnitStatus").value = statusOptions.includes(u.status) ? u.status : "في الخدمة";
+  $("modalUnitLocation").value = locationOptions.includes(u.location) ? u.location : "لا شي";
+  $("modalUnitType").value = vehicleTypes.includes(u.type) ? u.type : "لا شي";
+  $("modalUnitAssignment").value = u.assignment || "";
+  $("modalUnitPartner").value = u.partnerCode || "";
+
+  $("unitModal").classList.remove("hidden");
+}
+
+// ===== الوقت =====
 function wireTimeButtons() {
   $("startTimeBtn").addEventListener("click", () => {
     startTime = new Date();
@@ -291,8 +317,7 @@ function wireTimeButtons() {
   });
 }
 
-// ==================== النتيجة النهائية ====================
-
+// ===== النتيجة =====
 function buildResultText() {
   const opName = $("opName").value.trim();
   const opCode = $("opCode").value.trim();
@@ -310,7 +335,6 @@ function buildResultText() {
     ? ncos.map(p => `${p.name || "-"} ${p.code || ""}`.trim()).join(" ، ")
     : "-";
 
-  // تقسيم الوحدات حسب نوع المركبة
   const normalUnits = [];
   const speedUnits = [];
   const bikeUnits = [];
@@ -319,7 +343,11 @@ function buildResultText() {
   units.forEach(u => {
     if (!u.code) return;
 
-    const baseString = `${u.code}${u.location && u.location !== "لا شي" ? " | " + u.location : ""}${u.status && u.status !== "في الخدمة" ? " | " + u.status : ""}${u.assignment ? " | " + u.assignment : ""}`;
+    const baseString =
+      `${u.code}` +
+      (u.location && u.location !== "لا شي" ? ` | ${u.location}` : "") +
+      (u.status && u.status !== "في الخدمة" ? ` | ${u.status}` : "") +
+      (u.assignment ? ` | ${u.assignment}` : "");
 
     if (u.type === "سبيد يونت") {
       speedUnits.push(u);
@@ -328,16 +356,18 @@ function buildResultText() {
     } else if (u.type === "الهلي") {
       heliUnits.push(u);
     } else {
-      normalUnits.push(baseString || u.code);
+      normalUnits.push(baseString);
     }
   });
 
   const fmtPartners = arr =>
     arr.map(u => {
-      if (u.partnerCode) {
-        return `${u.code} + ${u.partnerCode}${u.location && u.location !== "لا شي" ? " | " + u.location : ""}${u.status && u.status !== "في الخدمة" ? " | " + u.status : ""}`;
-      }
-      return `${u.code}${u.location && u.location !== "لا شي" ? " | " + u.location : ""}${u.status && u.status !== "في الخدمة" ? " | " + u.status : ""}`;
+      const main =
+        `${u.code}` +
+        (u.location && u.location !== "لا شي" ? ` | ${u.location}` : "") +
+        (u.status && u.status !== "في الخدمة" ? ` | ${u.status}` : "");
+      if (u.partnerCode) return `${main} + ${u.partnerCode}`;
+      return main;
     }).join("\n") || "-";
 
   const normalText = normalUnits.length ? normalUnits.join("\n") : "-";
@@ -350,8 +380,8 @@ function buildResultText() {
 
   return [
     "استلام العمليات",
-    `اسم العمليات : ${opName || "-"} ${opCode ? "| " + opCode : ""}`,
-    `نائب مركز العمليات : ${opDeputyName || "-"} ${opDeputyCode ? "| " + opDeputyCode : ""}`,
+    `اسم العمليات : ${opName || "-"}${opCode ? " | " + opCode : ""}`,
+    `نائب مركز العمليات : ${opDeputyName || "-"}${opDeputyCode ? " | " + opDeputyCode : ""}`,
     "",
     "القيادات",
     leadersLine,
@@ -400,8 +430,7 @@ function wireCopyResult() {
   });
 }
 
-// ==================== OCR (Tesseract.js) ====================
-
+// ===== OCR =====
 function wireOcrInputs() {
   const fileInput = $("ocr-image-input");
   if (fileInput) {
@@ -426,13 +455,13 @@ function wireOcrInputs() {
   });
 }
 
-// توزيع الأكواد على الكود في الجدول
 function distributeCodesOnUnitsArray(codes) {
   if (!codes || !codes.length) return;
-  // لو ما فيه صفوف كافية نضيف
+
   while (units.length < codes.length) {
     addUnitRow();
   }
+
   codes.forEach((code, index) => {
     if (!units[index]) return;
     units[index].code = code;
@@ -454,7 +483,7 @@ async function runOcrOnImageFile(file) {
 
   try {
     const { data } = await Tesseract.recognize(file, "eng", {
-      logger: m => {
+      logger: (m) => {
         if (m.status === "recognizing text" && m.progress != null && progressBar) {
           const pct = Math.round(m.progress * 100);
           progressBar.value = pct;
@@ -480,10 +509,4 @@ async function runOcrOnImageFile(file) {
     console.error(err);
     showToast("حصل خطأ أثناء تحليل الصورة.", "error");
   }
-}
-
-// ==================== Basic buttons ====================
-
-function wireBasicButtons() {
-  // فقط placeholder لو احتجنا أزرار إضافية لاحقاً
 }
