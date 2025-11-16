@@ -202,6 +202,14 @@
               <option>الهلي</option>
             </select>
           </div>
+          <div class="field speed-type-field hidden" id="speedTypeField">
+            <label>نوع سبيد يونت</label>
+            <select id="modalSpeedSubType" class="input">
+              <option value="">اختر النوع</option>
+              <option value="فايبكس">فايبكس</option>
+              <option value="موتركس">موتركس</option>
+            </select>
+          </div>
           <div class="field">
             <label>شريك (كود)</label>
             <input id="modalUnitPartner" class="input" />
@@ -210,6 +218,27 @@
         <div class="modal-footer">
           <button id="saveUnitBtn" class="btn btn-primary">حفظ</button>
           <button id="cancelUnitBtn" class="btn btn-ghost">إلغاء</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- مودال إدخال عنصر (قيادة / ضابط / الخ) -->
+    <div id="chipModal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h4 id="chipModalTitle">إضافة</h4>
+          <button id="chipCloseBtn" class="btn-icon">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="field">
+            <label id="chipModalLabel">القيمة</label>
+            <input id="chipModalInput" class="input" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="chipSaveBtn" class="btn btn-primary">حفظ</button>
+          <button id="chipCancelBtn" class="btn btn-ghost">إلغاء</button>
         </div>
       </div>
     </div>
