@@ -1,291 +1,203 @@
-// ===== Helpers =====
-function $(id) {
-  return document.getElementById(id);
-}
+// ثوابت
+const $ = id => document.getElementById(id);
 
-function showToast(msg, type = "success") {
-  const t = $("toast");
-  if (!t) return;
-  t.textContent = msg;
-  t.className = "toast show " + type;
-  setTimeout(() => {
-    t.className = "toast hidden";
-  }, 2200);
-}
+const statusOptions = [
+  "في الخدمة",
+  "مشغول",
+  "مشغول - اختبار",
+  "مشغول - تدريب",
+  "مشغول حالة موجه 10"
+];
 
-function formatTime(date) {
-  if (!date) return "—";
-  let h = date.getHours();
-  const m = date.getMinutes().toString().padStart(2, "0");
-  const ampm = h >= 12 ? "PM" : "AM";
-  h = h % 12;
-  if (h === 0) h = 12;
-  return `${h}:${m} ${ampm}`;
-}
+const locationOptions = [
+  "لا شي",
+  "الشمال",
+  "الوسط",
+  "الشرق",
+  "الجنوب",
+  "ساندي",
+  "بوليتو"
+];
 
-// ===== بيانات عامّة =====
+const vehicleTypes = ["لا شي", "عادي", "سبيد يونت", "دباب", "الهلي"];
+
+// بيانات
 let leaders = [];
 let officers = [];
-let periodManagers = [];
+let supervisors = []; // اسم + كود
 let ncos = [];
 let units = [];
-
 let startTime = null;
 let endTime = null;
 
-// مودال تعديل
+// مودال
 let currentUnitIndex = null;
 
-// خيارات
-const statusOptions = ["في الخدمة", "مشغول", "خارج الخدمة"];
-const locationOptions = ["لا شي", "الشمال", "الجنوب", "الوسط", "بوليتو", "فايبكس"];
-const vehicleTypes = ["لا شي", "سبيد يونت", "دباب", "الهلي"];
+// Toast
+let toastTimeout = null;
+function showToast(message) {
+  const toast = $("toast");
+  toast.textContent = message;
+  toast.classList.add("show");
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2000);
+}
 
-// ===== Init =====
-document.addEventListener("DOMContentLoaded", () => {
-  const intro = $("intro-screen");
-  const introBtn = $("intro-enter-btn");
-  if (intro && introBtn) {
-    introBtn.addEventListener("click", () => {
-      intro.style.opacity = "0";
-      setTimeout(() => {
-        intro.style.display = "none";
-      }, 300);
-    });
-  }
+// Intro
+function wireIntro() {
+  $("enterAppBtn").addEventListener("click", () => {
+    $("intro").classList.add("hidden");
+    $("mainLayout").classList.remove("hidden");
+  });
+}
 
-  wireChips();
-  wireUnits();
-  wireTimeButtons();
-  wireCopyResult();
-  wireOcrInputs();
-  wireModal();
+// Chips helpers
+function renderChips(list, containerId) {
+  const container = $(containerId);
+  container.innerHTML = "";
+  list.forEach((value, index) => {
+    const chip = document.createElement("div");
+    chip.className = "chip";
+    chip.textContent = value;
+    const x = document.createElement("span");
+    x.className = "chip-remove";
+    x.textContent = "×";
+    x.onclick = () => {
+      list.splice(index, 1);
+      renderAllChips();
+      updateFinalResult();
+      showToast("تم الحذف");
+    };
+    chip.appendChild(x);
+    container.appendChild(chip);
+  });
+}
 
-  addUnitRow();
-  rebuildResult();
-});
+function renderAllChips() {
+  renderChips(leaders, "leadersList");
+  renderChips(officers, "officersList");
+  renderChips(supervisors, "supervisorList");
+  renderChips(ncos, "ncosList");
+}
 
-// ===== Chips (قيادات / ضباط / مسؤول فترة / ضباط الصف) =====
+function promptValue(title) {
+  const val = window.prompt(title);
+  return val && val.trim() ? val.trim() : null;
+}
+
 function wireChips() {
-  $("addLeaderBtn").addEventListener("click", () => {
-    const val = $("leaderCodeInput").value.trim();
-    if (!val) return;
-    leaders.push(val);
-    $("leaderCodeInput").value = "";
-    renderChips("leadersList", leaders, (idx) => {
-      leaders.splice(idx, 1);
-      renderChips("leadersList", leaders, arguments.callee);
-      rebuildResult();
-    });
-    rebuildResult();
-  });
+  $("addLeaderBtn").onclick = () => {
+    const v = promptValue("أدخل كود القيادة:");
+    if (!v) return;
+    leaders.push(v);
+    renderAllChips();
+    updateFinalResult();
+    showToast("تمت إضافة قيادة");
+  };
 
-  $("addOfficerBtn").addEventListener("click", () => {
-    const val = $("officerCodeInput").value.trim();
-    if (!val) return;
-    officers.push(val);
-    $("officerCodeInput").value = "";
-    renderChips("officersList", officers, (idx) => {
-      officers.splice(idx, 1);
-      renderChips("officersList", officers, arguments.callee);
-      rebuildResult();
-    });
-    rebuildResult();
-  });
+  $("addOfficerBtn").onclick = () => {
+    const v = promptValue("أدخل كود الضابط:");
+    if (!v) return;
+    officers.push(v);
+    renderAllChips();
+    updateFinalResult();
+    showToast("تمت إضافة ضابط");
+  };
 
-  $("addPeriodManagerBtn").addEventListener("click", () => {
-    const name = $("periodManagerNameInput").value.trim();
-    const code = $("periodManagerCodeInput").value.trim();
-    if (!name && !code) return;
-    periodManagers.push({ name, code });
-    $("periodManagerNameInput").value = "";
-    $("periodManagerCodeInput").value = "";
-    renderPeopleChips("periodManagersList", periodManagers, (idx) => {
-      periodManagers.splice(idx, 1);
-      renderPeopleChips("periodManagersList", periodManagers, arguments.callee);
-      rebuildResult();
-    });
-    rebuildResult();
-  });
+  $("addSupervisorBtn").onclick = () => {
+    const v = promptValue("أدخل اسم + كود مسؤول الفترة:");
+    if (!v) return;
+    supervisors = [v]; // دائمًا واحد فقط
+    renderAllChips();
+    updateFinalResult();
+    showToast("تم تعيين مسؤول الفترة");
+  };
 
-  $("addNcoBtn").addEventListener("click", () => {
-    const name = $("ncoNameInput").value.trim();
-    const code = $("ncoCodeInput").value.trim();
-    if (!name && !code) return;
-    ncos.push({ name, code });
-    $("ncoNameInput").value = "";
-    $("ncoCodeInput").value = "";
-    renderPeopleChips("ncosList", ncos, (idx) => {
-      ncos.splice(idx, 1);
-      renderPeopleChips("ncosList", ncos, arguments.callee);
-      rebuildResult();
-    });
-    rebuildResult();
-  });
-
-  ["opName", "opCode", "opDeputyName", "opDeputyCode"].forEach((id) => {
-    $(id).addEventListener("input", rebuildResult);
-  });
+  $("addNcoBtn").onclick = () => {
+    const v = promptValue("أدخل كود ضابط الصف:");
+    if (!v) return;
+    ncos.push(v);
+    renderAllChips();
+    updateFinalResult();
+    showToast("تمت إضافة ضابط صف");
+  };
 }
 
-function renderChips(containerId, arr, onDelete) {
-  const c = $(containerId);
-  c.innerHTML = "";
-  arr.forEach((v, i) => {
-    const chip = document.createElement("span");
-    chip.className = "chip";
-    chip.textContent = v;
-    const btn = document.createElement("button");
-    btn.textContent = "×";
-    btn.addEventListener("click", () => onDelete(i));
-    chip.appendChild(btn);
-    c.appendChild(chip);
-  });
-}
-
-function renderPeopleChips(containerId, arr, onDelete) {
-  const c = $(containerId);
-  c.innerHTML = "";
-  arr.forEach((obj, i) => {
-    const chip = document.createElement("span");
-    chip.className = "chip";
-    chip.textContent = `${obj.name || "-"} | ${obj.code || "-"}`;
-    const btn = document.createElement("button");
-    btn.textContent = "×";
-    btn.addEventListener("click", () => onDelete(i));
-    chip.appendChild(btn);
-    c.appendChild(chip);
-  });
-}
-
-// ===== وحدات =====
-function wireUnits() {
-  $("addUnitBtn").addEventListener("click", () => {
-    addUnitRow();
-    rebuildResult();
-    showToast("تم إضافة وحدة جديدة", "success");
-  });
-
-  $("clearUnitsBtn").addEventListener("click", () => {
-    units = [];
-    renderUnitsTable();
-    rebuildResult();
-    showToast("تم مسح جميع الوحدات", "warning");
-  });
-}
-
+// وحدات
 function addUnitRow(initial = {}) {
   units.push({
     code: initial.code || "",
     status: initial.status || "في الخدمة",
     location: initial.location || "لا شي",
-    assignment: initial.assignment || "",
     type: initial.type || "لا شي",
     partnerCode: initial.partnerCode || ""
   });
   renderUnitsTable();
+  updateFinalResult();
+}
+
+function buildClickableCell(text, onClick) {
+  const td = document.createElement("td");
+  td.textContent = text || "";
+  td.className = "clickable-cell";
+  td.onclick = onClick;
+  return td;
 }
 
 function renderUnitsTable() {
   const tbody = $("unitsTableBody");
   tbody.innerHTML = "";
+
   units.forEach((u, index) => {
     const tr = document.createElement("tr");
 
     tr.appendChild(buildClickableCell(u.code || "", () => openUnitModal(index)));
     tr.appendChild(buildClickableCell(u.status, () => openUnitModal(index)));
     tr.appendChild(buildClickableCell(u.location, () => openUnitModal(index)));
-    tr.appendChild(buildClickableCell(u.assignment || "-", () => openUnitModal(index)));
     tr.appendChild(buildClickableCell(u.type, () => openUnitModal(index)));
     tr.appendChild(buildClickableCell(u.partnerCode || "-", () => openUnitModal(index)));
 
     const actionsTd = document.createElement("td");
 
     const editBtn = document.createElement("button");
-    editBtn.className = "btn btn-secondary";
+    editBtn.className = "btn btn-ghost";
     editBtn.textContent = "تعديل";
-    editBtn.addEventListener("click", () => openUnitModal(index));
-
-    const delBtn = document.createElement("button");
-    delBtn.className = "btn btn-danger";
-    delBtn.textContent = "حذف";
-    delBtn.style.marginInlineStart = "4px";
-    delBtn.addEventListener("click", () => {
-      units.splice(index, 1);
-      renderUnitsTable();
-      rebuildResult();
-      showToast("تم حذف الوحدة", "warning");
-    });
+    editBtn.onclick = () => openUnitModal(index);
 
     const partnerBtn = document.createElement("button");
-    partnerBtn.className = "btn btn-success";
-    partnerBtn.textContent = "أضف شريك";
-    partnerBtn.style.marginInlineStart = "4px";
-    partnerBtn.addEventListener("click", () => {
-      const partner = prompt("أدخل كود الشريك:");
-      if (partner) {
-        units[index].partnerCode = partner.trim();
-        renderUnitsTable();
-        rebuildResult();
-        showToast("تم إضافة الشريك", "success");
-      }
-    });
+    partnerBtn.className = "btn btn-secondary";
+    partnerBtn.textContent = "إضافة شريك";
+    partnerBtn.onclick = () => {
+      const val = promptValue("أدخل كود الشريك:");
+      if (!val) return;
+      units[index].partnerCode = val;
+      renderUnitsTable();
+      updateFinalResult();
+      showToast("تمت إضافة الشريك");
+    };
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "btn btn-ghost";
+    deleteBtn.textContent = "حذف";
+    deleteBtn.onclick = () => {
+      units.splice(index, 1);
+      renderUnitsTable();
+      updateFinalResult();
+      showToast("تم الحذف");
+    };
 
     actionsTd.appendChild(editBtn);
-    actionsTd.appendChild(delBtn);
     actionsTd.appendChild(partnerBtn);
-    tr.appendChild(actionsTd);
+    actionsTd.appendChild(deleteBtn);
 
+    tr.appendChild(actionsTd);
     tbody.appendChild(tr);
   });
 }
 
-function buildClickableCell(text, onClick) {
-  const td = document.createElement("td");
-  td.textContent = text || "";
-  td.className = "unit-cell-clickable";
-  td.addEventListener("click", onClick);
-  return td;
-}
-
-// ===== مودال التعديل =====
-function wireModal() {
-  const modal = $("unitModal");
-  const cancelBtn = $("unitModalCancel");
-  const closeBtn = $("unitModalClose");
-  const saveBtn = $("unitModalSave");
-  const backdrop = modal.querySelector(".modal-backdrop");
-
-  const close = () => {
-    modal.classList.add("hidden");
-    currentUnitIndex = null;
-  };
-
-  cancelBtn.addEventListener("click", () => {
-    close();
-    showToast("تم إلغاء التعديل", "warning");
-  });
-
-  closeBtn.addEventListener("click", close);
-  backdrop.addEventListener("click", close);
-
-  saveBtn.addEventListener("click", () => {
-    if (currentUnitIndex == null) return;
-    const u = units[currentUnitIndex];
-    u.code = $("modalUnitCode").value.trim();
-    u.status = $("modalUnitStatus").value;
-    u.location = $("modalUnitLocation").value;
-    u.type = $("modalUnitType").value;
-    u.assignment = $("modalUnitAssignment").value.trim();
-    u.partnerCode = $("modalUnitPartner").value.trim();
-
-    renderUnitsTable();
-    rebuildResult();
-    close();
-    showToast("تم حفظ تعديل الوحدة ✅", "success");
-  });
-}
-
+// Modal
 function openUnitModal(index) {
   const u = units[index];
   currentUnitIndex = index;
@@ -294,46 +206,175 @@ function openUnitModal(index) {
   $("modalUnitStatus").value = statusOptions.includes(u.status) ? u.status : "في الخدمة";
   $("modalUnitLocation").value = locationOptions.includes(u.location) ? u.location : "لا شي";
   $("modalUnitType").value = vehicleTypes.includes(u.type) ? u.type : "لا شي";
-  $("modalUnitAssignment").value = u.assignment || "";
   $("modalUnitPartner").value = u.partnerCode || "";
+
+  const typeSelect = $("modalUnitType");
+  typeSelect.onchange = () => {
+    if (typeSelect.value === "سبيد يونت") {
+      const choice = window.prompt("نوع سبيد يونت؟ اكتب: فايبكس أو موتركس", "فايبكس");
+      if (choice && (choice.trim() === "فايبكس" || choice.trim() === "موتركس")) {
+        // نخزّن نوع السرعة كموقع إضافي لو ترغب
+        if (!u.location || u.location === "لا شي") {
+          u.location = choice.trim();
+        } else {
+          u.location = `${u.location} | ${choice.trim()}`;
+        }
+        $("modalUnitLocation").value = u.location;
+      }
+    }
+  };
 
   $("unitModal").classList.remove("hidden");
 }
 
-// ===== الوقت =====
-function wireTimeButtons() {
-  $("startTimeBtn").addEventListener("click", () => {
-    startTime = new Date();
-    $("startTimeLabel").textContent = formatTime(startTime);
-    rebuildResult();
-    showToast("تم تسجيل وقت الاستلام", "success");
-  });
+function closeUnitModal() {
+  $("unitModal").classList.add("hidden");
+  currentUnitIndex = null;
+}
 
-  $("endTimeBtn").addEventListener("click", () => {
-    endTime = new Date();
-    $("endTimeLabel").textContent = formatTime(endTime);
-    rebuildResult();
-    showToast("تم تسجيل وقت التسليم", "success");
+function wireModal() {
+  $("closeModalBtn").onclick = closeUnitModal;
+  $("cancelUnitBtn").onclick = closeUnitModal;
+
+  $("saveUnitBtn").onclick = () => {
+    if (currentUnitIndex == null) return;
+    const u = units[currentUnitIndex];
+    u.code = $("modalUnitCode").value.trim();
+    u.status = $("modalUnitStatus").value;
+    u.location = $("modalUnitLocation").value;
+    u.type = $("modalUnitType").value;
+    u.partnerCode = $("modalUnitPartner").value.trim();
+
+    renderUnitsTable();
+    updateFinalResult();
+    showToast("تم حفظ التعديل");
+    closeUnitModal();
+  };
+}
+
+// وقت الاستلام والتسليم
+function formatTime(date) {
+  if (!date) return "—";
+  return date.toLocaleTimeString("ar-SA", {
+    hour: "2-digit",
+    minute: "2-digit"
   });
 }
 
-// ===== النتيجة =====
+function wireTimeButtons() {
+  $("startTimeBtn").onclick = () => {
+    startTime = new Date();
+    $("startTimeDisplay").textContent = formatTime(startTime);
+    updateFinalResult();
+    showToast("تم تسجيل وقت الاستلام");
+  };
+
+  $("endTimeBtn").onclick = () => {
+    endTime = new Date();
+    $("endTimeDisplay").textContent = formatTime(endTime);
+    updateFinalResult();
+    showToast("تم تسجيل وقت التسليم");
+  };
+}
+
+// OCR (توزيع الأكواد فقط على حقل الكود في الوحدات)
+async function runOcrOnImageFile(file) {
+  if (!file) return;
+  if (typeof Tesseract === "undefined") {
+    showToast("مكتبة OCR غير متوفرة");
+    return;
+  }
+
+  $("ocrStatusLabel").textContent = "جاري التحليل...";
+  $("ocrProgressBar").style.width = "0%";
+  $("ocrProgressValue").textContent = "0%";
+
+  try {
+    const { data } = await Tesseract.recognize(file, "eng", {
+      logger: m => {
+        if (m.status === "recognizing text" && m.progress) {
+          const pct = Math.round(m.progress * 100);
+          $("ocrProgressBar").style.width = pct + "%";
+          $("ocrProgressValue").textContent = pct + "%";
+        }
+      }
+    });
+
+    const text = data.text || "";
+    const codes = text.match(/\d+/g) || [];
+
+    // توزيع على القائمة عموديًا: كل كود = سطر جديد للوحدة
+    codes.forEach(code => {
+      addUnitRow({ code, status: "في الخدمة", location: "لا شي", type: "لا شي" });
+    });
+
+    $("ocrStatusLabel").textContent = "تم التحليل";
+    showToast("تم توزيع الأكواد على القائمة");
+  } catch (e) {
+    console.error(e);
+    $("ocrStatusLabel").textContent = "حدث خطأ أثناء التحليل";
+    showToast("حدث خطأ أثناء التحليل");
+  } finally {
+    $("ocrProgressBar").style.width = "100%";
+    $("ocrProgressValue").textContent = "100%";
+    setTimeout(() => {
+      $("ocrProgressBar").style.width = "0%";
+      $("ocrProgressValue").textContent = "0%";
+      $("ocrStatusLabel").textContent = "جاهز";
+    }, 1200);
+  }
+}
+
+function wireOcr() {
+  $("ocrFileInput").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (file) runOcrOnImageFile(file);
+  });
+
+  // لصق صورة داخل pasteArea
+  $("pasteArea").addEventListener("paste", e => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.indexOf("image") !== -1) {
+        const file = item.getAsFile();
+        if (file) {
+          runOcrOnImageFile(file);
+          e.preventDefault();
+          break;
+        }
+      }
+    }
+  });
+}
+
+// النتيجة النهائية
 function buildResultText() {
-  const opName = $("opName").value.trim();
-  const opCode = $("opCode").value.trim();
-  const opDeputyName = $("opDeputyName").value.trim();
-  const opDeputyCode = $("opDeputyCode").value.trim();
+  let lines = [];
 
-  const leadersLine = leaders.length ? leaders.join(" - ") : "-";
-  const officersLine = officers.length ? officers.join(" - ") : "-";
+  const operationsName = $("operationsName").value.trim() || "-";
+  const operationsDeputy = $("operationsDeputy").value.trim() || "-";
 
-  const periodLine = periodManagers.length
-    ? periodManagers.map(p => `${p.name || "-"} ${p.code || ""}`.trim()).join(" ، ")
-    : "-";
+  lines.push("استلام العمليات");
+  lines.push(`اسم العمليات : ${operationsName}`);
+  lines.push(`نائب مركز العمليات : ${operationsDeputy}`);
+  lines.push("");
 
-  const ncoLine = ncos.length
-    ? ncos.map(p => `${p.name || "-"} ${p.code || ""}`.trim()).join(" ، ")
-    : "-";
+  lines.push("القيادات");
+  lines.push(leaders.length ? leaders.join(" - ") : "-");
+  lines.push("");
+
+  lines.push("الضباط");
+  lines.push(officers.length ? officers.join(" - ") : "-");
+  lines.push("");
+
+  lines.push("مسؤول فترة");
+  lines.push(supervisors.length ? supervisors.join(" - ") : "-");
+  lines.push("");
+
+  lines.push("ضباط الصف");
+  lines.push(ncos.length ? ncos.join(" - ") : "-");
+  lines.push("");
 
   const normalUnits = [];
   const speedUnits = [];
@@ -341,13 +382,10 @@ function buildResultText() {
   const heliUnits = [];
 
   units.forEach(u => {
-    if (!u.code) return;
-
     const baseString =
       `${u.code}` +
       (u.location && u.location !== "لا شي" ? ` | ${u.location}` : "") +
-      (u.status && u.status !== "في الخدمة" ? ` | ${u.status}` : "") +
-      (u.assignment ? ` | ${u.assignment}` : "");
+      (u.status && u.status !== "في الخدمة" ? ` | ${u.status}` : "");
 
     if (u.type === "سبيد يونت") {
       speedUnits.push(u);
@@ -361,152 +399,76 @@ function buildResultText() {
   });
 
   const fmtPartners = arr =>
-    arr.map(u => {
-      const main =
-        `${u.code}` +
-        (u.location && u.location !== "لا شي" ? ` | ${u.location}` : "") +
-        (u.status && u.status !== "في الخدمة" ? ` | ${u.status}` : "");
-      if (u.partnerCode) return `${main} + ${u.partnerCode}`;
-      return main;
-    }).join("\n") || "-";
+    arr
+      .map(u => {
+        const codePart = u.partnerCode
+          ? `${u.code} + ${u.partnerCode}`
+          : `${u.code}`;
+        const locationPart =
+          u.location && u.location !== "لا شي" ? ` | ${u.location}` : "";
+        const statusPart =
+          u.status && u.status !== "في الخدمة" ? ` | ${u.status}` : "";
+        return `${codePart}${locationPart}${statusPart}`;
+      })
+      .join("\n") || "-";
 
-  const normalText = normalUnits.length ? normalUnits.join("\n") : "-";
-  const speedText = fmtPartners(speedUnits);
-  const bikeText = fmtPartners(bikeUnits);
-  const heliText = fmtPartners(heliUnits);
+  lines.push("توزيع الوحدات");
+  lines.push(normalUnits.join("\n") || "-");
+  lines.push("");
 
-  const startStr = startTime ? formatTime(startTime) : "—";
-  const endStr = endTime ? formatTime(endTime) : "—";
+  lines.push("وحدات سبيد يونت");
+  lines.push(fmtPartners(speedUnits));
+  lines.push("");
 
-  return [
-    "استلام العمليات",
-    `اسم العمليات : ${opName || "-"}${opCode ? " | " + opCode : ""}`,
-    `نائب مركز العمليات : ${opDeputyName || "-"}${opDeputyCode ? " | " + opDeputyCode : ""}`,
-    "",
-    "القيادات",
-    leadersLine,
-    "",
-    "الضباط",
-    officersLine,
-    "",
-    "مسؤول فترة",
-    periodLine,
-    "",
-    "ضباط الصف",
-    ncoLine,
-    "",
-    "توزيع الوحدات",
-    normalText,
-    "",
-    "وحدات سبيد يونت",
-    speedText,
-    "",
-    "وحدات دباب",
-    bikeText,
-    "",
-    "وحدات الهلي",
-    heliText,
-    "",
-    `وقت الاستلام: ${startStr}`,
-    `وقت التسليم: ${endStr}`,
-    "",
-    "تم التسليم إلى :"
-  ].join("\n");
+  lines.push("وحدات دباب");
+  lines.push(fmtPartners(bikeUnits));
+  lines.push("");
+
+  lines.push("وحدات الهلي");
+  lines.push(fmtPartners(heliUnits));
+  lines.push("");
+
+  lines.push(`وقت الاستلام: ${formatTime(startTime)}`);
+  lines.push(`وقت التسليم: ${formatTime(endTime)}`);
+  lines.push("");
+  lines.push("تم التسليم إلى :");
+
+  return lines.join("\n");
 }
 
-function rebuildResult() {
-  $("finalResult").textContent = buildResultText();
+function updateFinalResult() {
+  $("finalResult").value = buildResultText();
 }
 
-function wireCopyResult() {
-  $("copyResultBtn").addEventListener("click", async () => {
-    const text = $("finalResult").textContent;
-    try {
-      await navigator.clipboard.writeText(text);
-      showToast("تم النسخ ✅", "success");
-    } catch {
-      showToast("لم يتم النسخ، انسخ يدويًا.", "warning");
-    }
-  });
+// Copy
+function wireCopy() {
+  $("copyResultBtn").onclick = () => {
+    const txt = $("finalResult").value;
+    navigator.clipboard
+      .writeText(txt)
+      .then(() => showToast("تم نسخ النص"))
+      .catch(() => showToast("تعذر نسخ النص"));
+  };
 }
 
-// ===== OCR =====
-function wireOcrInputs() {
-  const fileInput = $("ocr-image-input");
-  if (fileInput) {
-    fileInput.addEventListener("change", e => {
-      const file = e.target.files[0];
-      if (file) runOcrOnImageFile(file);
-    });
-  }
-
-  const pasteArea = $("ocr-paste-area");
-  pasteArea.addEventListener("paste", e => {
-    const items = e.clipboardData.items;
-    for (let i = 0; i < items.length; i++) {
-      const it = items[i];
-      if (it.type.indexOf("image") !== -1) {
-        const file = it.getAsFile();
-        runOcrOnImageFile(file);
-        e.preventDefault();
-        return;
-      }
-    }
-  });
+// ربط أحداث المدخلات لتحديث النتيجة مباشرة
+function wireLiveUpdate() {
+  $("operationsName").addEventListener("input", updateFinalResult);
+  $("operationsDeputy").addEventListener("input", updateFinalResult);
 }
 
-function distributeCodesOnUnitsArray(codes) {
-  if (!codes || !codes.length) return;
+// Init
+function init() {
+  wireIntro();
+  wireChips();
+  wireModal();
+  wireTimeButtons();
+  wireOcr();
+  wireCopy();
+  wireLiveUpdate();
 
-  while (units.length < codes.length) {
-    addUnitRow();
-  }
-
-  codes.forEach((code, index) => {
-    if (!units[index]) return;
-    units[index].code = code;
-  });
-  renderUnitsTable();
-  rebuildResult();
+  // سطر واحد مبدئي للوحدات
+  addUnitRow();
 }
 
-async function runOcrOnImageFile(file) {
-  if (!window.Tesseract) {
-    showToast("خطأ: مكتبة Tesseract غير متوفرة.", "error");
-    return;
-  }
-
-  const progressBar = $("ocr-progress");
-  const progressText = $("ocr-progress-text");
-  if (progressBar) progressBar.value = 0;
-  if (progressText) progressText.textContent = "0%";
-
-  try {
-    const { data } = await Tesseract.recognize(file, "eng", {
-      logger: (m) => {
-        if (m.status === "recognizing text" && m.progress != null && progressBar) {
-          const pct = Math.round(m.progress * 100);
-          progressBar.value = pct;
-          if (progressText) progressText.textContent = pct + "%";
-        }
-      }
-    });
-
-    const raw = (data.text || "").trim();
-    const codes = raw
-      .split(/\s+/)
-      .map(t => t.replace(/[^\d]/g, ""))
-      .filter(t => t.length > 0);
-
-    if (!codes.length) {
-      showToast("لم يتم العثور على أرقام في الصورة.", "warning");
-      return;
-    }
-
-    distributeCodesOnUnitsArray(codes);
-    showToast("تم استخراج الأكواد وتوزيعها ✅", "success");
-  } catch (err) {
-    console.error(err);
-    showToast("حصل خطأ أثناء تحليل الصورة.", "error");
-  }
-}
+document.addEventListener("DOMContentLoaded", init);
