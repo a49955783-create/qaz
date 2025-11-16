@@ -78,28 +78,62 @@
           </div>
         </section>
 
-        <!-- بطاقة OCR -->
-        <section class="card">
-          <h3 class="card-title">استخراج الأكواد من صورة (OCR)</h3>
-          <div class="field">
-            <label>رفع صورة</label>
-            <input id="ocrFileInput" type="file" accept=".png,.jpg,.jpeg,.webp" />
-          </div>
-          <div class="field">
-            <label>أو لصق صورة داخل هذا المربع (Ctrl+V)</label>
-            <div id="pasteArea" class="paste-area">
-              ألصق صورة هنا من الحافظة
+        <!-- بطاقة OCR (تصميم جديد + استبدال/دمج) -->
+        <section class="card ocr-card">
+          <div class="ocr-header">
+            <div>
+              <h3 class="card-title">استخراج الأكواد من صورة (OCR)</h3>
+              <p class="ocr-subtitle">ارفع صورة أو ألصق لقطة شاشة وسيتم توزيع الأكواد تلقائيًا على حقل الكود في القائمة.</p>
+            </div>
+            <div class="ocr-mode-toggle">
+              <span>وضع توزيع الأكواد:</span>
+              <div class="ocr-mode-buttons">
+                <button id="ocrModeReplace" class="btn btn-secondary ocr-mode-btn active" data-mode="replace">
+                  استبدال
+                </button>
+                <button id="ocrModeMerge" class="btn btn-secondary ocr-mode-btn" data-mode="merge">
+                  دمج
+                </button>
+              </div>
             </div>
           </div>
-          <p class="hint">
-            يفضل رفع/لصق صورة عالية الجودة. أحيانًا ستحتاج لتعديل النتائج يدويًا قبل الإرسال.
-          </p>
-          <div class="progress-row">
-            <span id="ocrStatusLabel">جاهز</span>
-            <div class="progress">
-              <div id="ocrProgressBar" class="progress-bar"></div>
+
+          <div class="ocr-body">
+            <div class="ocr-left">
+              <div class="field">
+                <label>رفع صورة</label>
+                <div class="upload-wrapper">
+                  <input id="ocrFileInput" type="file" accept=".png,.jpg,.jpeg,.webp" />
+                </div>
+              </div>
+              <div class="field">
+                <label>أو لصق صورة داخل هذا المربع (Ctrl+V)</label>
+                <div id="pasteArea" class="paste-area modern">
+                  ألصق صورة هنا من الحافظة
+                </div>
+              </div>
             </div>
-            <span id="ocrProgressValue">0%</span>
+
+            <div class="ocr-right">
+              <div class="field">
+                <label>حالة التحليل</label>
+                <div class="ocr-status-box">
+                  <span id="ocrStatusLabel">جاهز</span>
+                </div>
+              </div>
+              <div class="field">
+                <label>التقدم</label>
+                <div class="progress-row">
+                  <div class="progress">
+                    <div id="ocrProgressBar" class="progress-bar"></div>
+                  </div>
+                  <span id="ocrProgressValue">0%</span>
+                </div>
+              </div>
+              <p class="hint">
+                يفضل رفع/لصق صورة عالية الجودة. أحيانًا ستحتاج لتعديل النتائج يدويًا قبل الإرسال.
+              </p>
+            </div>
           </div>
         </section>
 
