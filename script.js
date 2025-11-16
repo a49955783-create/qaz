@@ -30,8 +30,13 @@ let units = [];
 let startTime = null;
 let endTime = null;
 
-// مودال
+// مودالات
 let currentUnitIndex = null;
+
+// مودال chip (قيادات - ضباط - مسؤول الفترة - ضباط الصف)
+let chipContext = {
+  type: null // "leader" | "officer" | "supervisor" | "nco"
+};
 
 // Toast
 let toastTimeout = null;
@@ -82,47 +87,76 @@ function renderAllChips() {
   renderChips(ncos, "ncosList");
 }
 
-function promptValue(title) {
-  const val = window.prompt(title);
-  return val && val.trim() ? val.trim() : null;
+// فتح مودال إدخال قيمة (بدل window.prompt)
+function openChipModal(type, title, label, placeholder) {
+  chipContext.type = type;
+  $("chipModalTitle").textContent = title;
+  $("chipModalLabel").textContent = label;
+  const input = $("chipModalInput");
+  input.value = "";
+  input.placeholder = placeholder || "";
+  $("chipModal").classList.remove("hidden");
+  input.focus();
 }
 
+function closeChipModal() {
+  $("chipModal").classList.add("hidden");
+  chipContext.type = null;
+}
+
+function applyChipModalValue() {
+  const val = $("chipModalInput").value.trim();
+  if (!val) {
+    showToast("الرجاء إدخال قيمة");
+    return;
+  }
+  switch (chipContext.type) {
+    case "leader":
+      leaders.push(val);
+      showToast("تمت إضافة قيادة");
+      break;
+    case "officer":
+      officers.push(val);
+      showToast("تمت إضافة ضابط");
+      break;
+    case "supervisor":
+      supervisors = [val];
+      showToast("تم تعيين مسؤول الفترة");
+      break;
+    case "nco":
+      ncos.push(val);
+      showToast("تمت إضافة ضابط صف");
+      break;
+  }
+  renderAllChips();
+  updateFinalResult();
+  closeChipModal();
+}
+
+function wireChipModal() {
+  $("chipCloseBtn").onclick = closeChipModal;
+  $("chipCancelBtn").onclick = closeChipModal;
+  $("chipSaveBtn").onclick = applyChipModalValue;
+}
+
+// ربط أزرار الـ Chips
 function wireChips() {
-  $("addLeaderBtn").onclick = () => {
-    const v = promptValue("أدخل كود القيادة:");
-    if (!v) return;
-    leaders.push(v);
-    renderAllChips();
-    updateFinalResult();
-    showToast("تمت إضافة قيادة");
-  };
+  $("addLeaderBtn").onclick = () =>
+    openChipModal("leader", "إضافة قيادة", "كود القيادة", "مثال: 101");
 
-  $("addOfficerBtn").onclick = () => {
-    const v = promptValue("أدخل كود الضابط:");
-    if (!v) return;
-    officers.push(v);
-    renderAllChips();
-    updateFinalResult();
-    showToast("تمت إضافة ضابط");
-  };
+  $("addOfficerBtn").onclick = () =>
+    openChipModal("officer", "إضافة ضابط", "كود الضابط", "مثال: 1126");
 
-  $("addSupervisorBtn").onclick = () => {
-    const v = promptValue("أدخل اسم + كود مسؤول الفترة:");
-    if (!v) return;
-    supervisors = [v]; // دائمًا واحد فقط
-    renderAllChips();
-    updateFinalResult();
-    showToast("تم تعيين مسؤول الفترة");
-  };
+  $("addSupervisorBtn").onclick = () =>
+    openChipModal(
+      "supervisor",
+      "تعيين مسؤول الفترة",
+      "مسؤول الفترة (اسم + كود)",
+      "مثال: عبدالله صالح 145"
+    );
 
-  $("addNcoBtn").onclick = () => {
-    const v = promptValue("أدخل كود ضابط الصف:");
-    if (!v) return;
-    ncos.push(v);
-    renderAllChips();
-    updateFinalResult();
-    showToast("تمت إضافة ضابط صف");
-  };
+  $("addNcoBtn").onclick = () =>
+    openChipModal("nco", "إضافة ضابط صف", "كود ضابط الصف", "مثال: 141");
 }
 
 // وحدات
@@ -170,9 +204,9 @@ function renderUnitsTable() {
     partnerBtn.className = "btn btn-secondary";
     partnerBtn.textContent = "إضافة شريك";
     partnerBtn.onclick = () => {
-      const val = promptValue("أدخل كود الشريك:");
-      if (!val) return;
-      units[index].partnerCode = val;
+      const val = window.prompt("أدخل كود الشريك:");
+      if (!val || !val.trim()) return;
+      units[index].partnerCode = val.trim();
       renderUnitsTable();
       updateFinalResult();
       showToast("تمت إضافة الشريك");
@@ -197,31 +231,41 @@ function renderUnitsTable() {
   });
 }
 
-// Modal
+// Modal الوحدة
+function updateSpeedFieldVisibility(typeValue) {
+  const field = $("speedTypeField");
+  if (typeValue === "سبيد يونت") {
+    field.classList.remove("hidden");
+  } else {
+    field.classList.add("hidden");
+  }
+}
+
 function openUnitModal(index) {
   const u = units[index];
   currentUnitIndex = index;
 
   $("modalUnitCode").value = u.code || "";
   $("modalUnitStatus").value = statusOptions.includes(u.status) ? u.status : "في الخدمة";
-  $("modalUnitLocation").value = locationOptions.includes(u.location) ? u.location : "لا شي";
+  $("modalUnitLocation").value = locationOptions.includes(u.location)
+    ? u.location
+    : "لا شي";
   $("modalUnitType").value = vehicleTypes.includes(u.type) ? u.type : "لا شي";
   $("modalUnitPartner").value = u.partnerCode || "";
 
-  const typeSelect = $("modalUnitType");
-  typeSelect.onchange = () => {
-    if (typeSelect.value === "سبيد يونت") {
-      const choice = window.prompt("نوع سبيد يونت؟ اكتب: فايبكس أو موتركس", "فايبكس");
-      if (choice && (choice.trim() === "فايبكس" || choice.trim() === "موتركس")) {
-        // نخزّن نوع السرعة كموقع إضافي لو ترغب
-        if (!u.location || u.location === "لا شي") {
-          u.location = choice.trim();
-        } else {
-          u.location = `${u.location} | ${choice.trim()}`;
-        }
-        $("modalUnitLocation").value = u.location;
-      }
-    }
+  // استنتاج نوع سبيد يونت من الموقع إذا كان موجود
+  let speedSubType = "";
+  if (u.type === "سبيد يونت" && u.location) {
+    if (u.location.includes("فايبكس")) speedSubType = "فايبكس";
+    if (u.location.includes("موتركس")) speedSubType = "موتركس";
+  }
+  $("modalSpeedSubType").value = speedSubType;
+
+  updateSpeedFieldVisibility(u.type);
+
+  $("modalUnitType").onchange = e => {
+    const val = e.target.value;
+    updateSpeedFieldVisibility(val);
   };
 
   $("unitModal").classList.remove("hidden");
@@ -244,6 +288,16 @@ function wireModal() {
     u.location = $("modalUnitLocation").value;
     u.type = $("modalUnitType").value;
     u.partnerCode = $("modalUnitPartner").value.trim();
+
+    // سبيد يونت: ندمج نوعه في الموقع لو مختار
+    if (u.type === "سبيد يونت") {
+      const sub = $("modalSpeedSubType").value;
+      if (sub === "فايبكس" || sub === "موتركس") {
+        // نخلي شكل الموقع مثلاً: "الوسط | فايبكس" أو فقط "فايبكس" لو لا شي
+        const baseLoc = u.location && u.location !== "لا شي" ? u.location : "";
+        u.location = baseLoc ? `${baseLoc} | ${sub}` : sub;
+      }
+    }
 
     renderUnitsTable();
     updateFinalResult();
@@ -303,7 +357,6 @@ async function runOcrOnImageFile(file) {
     const text = data.text || "";
     const codes = text.match(/\d+/g) || [];
 
-    // توزيع على القائمة عموديًا: كل كود = سطر جديد للوحدة
     codes.forEach(code => {
       addUnitRow({ code, status: "في الخدمة", location: "لا شي", type: "لا شي" });
     });
@@ -331,7 +384,6 @@ function wireOcr() {
     if (file) runOcrOnImageFile(file);
   });
 
-  // لصق صورة داخل pasteArea
   $("pasteArea").addEventListener("paste", e => {
     const items = e.clipboardData.items;
     for (let i = 0; i < items.length; i++) {
@@ -451,7 +503,7 @@ function wireCopy() {
   };
 }
 
-// ربط أحداث المدخلات لتحديث النتيجة مباشرة
+// Live update
 function wireLiveUpdate() {
   $("operationsName").addEventListener("input", updateFinalResult);
   $("operationsDeputy").addEventListener("input", updateFinalResult);
@@ -460,6 +512,7 @@ function wireLiveUpdate() {
 // Init
 function init() {
   wireIntro();
+  wireChipModal();
   wireChips();
   wireModal();
   wireTimeButtons();
@@ -467,8 +520,7 @@ function init() {
   wireCopy();
   wireLiveUpdate();
 
-  // سطر واحد مبدئي للوحدات
-  addUnitRow();
+  addUnitRow(); // سطر مبدئي
 }
 
 document.addEventListener("DOMContentLoaded", init);
