@@ -9,7 +9,7 @@
 <body>
   <div class="app-container">
 
-    <!-- انترو بسيط يختفي بعد الدخول -->
+    <!-- انترو -->
     <div id="intro-screen" class="intro-overlay">
       <div class="intro-card">
         <h1>شرطة ريسبكت</h1>
@@ -25,7 +25,6 @@
     </header>
 
     <main class="app-main">
-
       <!-- بيانات أساسية -->
       <section class="card">
         <h3>بيانات العمليات</h3>
@@ -91,7 +90,7 @@
         </div>
       </section>
 
-      <!-- OCR + توزيع -->
+      <!-- OCR + توزيع الوحدات -->
       <section class="card">
         <h3>توزيع الوحدات + OCR</h3>
 
@@ -129,14 +128,12 @@
                 <th>إجراءات</th>
               </tr>
             </thead>
-            <tbody id="unitsTableBody">
-              <!-- يُضاف ديناميكياً -->
-            </tbody>
+            <tbody id="unitsTableBody"></tbody>
           </table>
         </div>
       </section>
 
-      <!-- أزرار الوقت + النتيجة -->
+      <!-- الوقت + النتيجة -->
       <section class="card">
         <h3>الوقت والنتيجة</h3>
         <div class="time-row">
@@ -150,17 +147,72 @@
           <button id="copyResultBtn" class="btn btn-primary">نسخ</button>
         </div>
 
-        <div id="finalResult" class="result-box" contenteditable="true">
-          <!-- يتم بناء النص تلقائياً -->
-        </div>
+        <div id="finalResult" class="result-box" contenteditable="true"></div>
       </section>
     </main>
 
-    <!-- Toast تنبيهات -->
+    <!-- Toast -->
     <div id="toast" class="toast hidden"></div>
+
+    <!-- مودال تعديل الوحدة -->
+    <div id="unitModal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4>تعديل الوحدة</h4>
+          <button id="unitModalClose" class="modal-close">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="field">
+            <label>الكود</label>
+            <input id="modalUnitCode" class="input" />
+          </div>
+          <div class="field">
+            <label>الحالة</label>
+            <select id="modalUnitStatus" class="input">
+              <option>في الخدمة</option>
+              <option>مشغول</option>
+              <option>خارج الخدمة</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>الموقع</label>
+            <select id="modalUnitLocation" class="input">
+              <option>لا شي</option>
+              <option>الشمال</option>
+              <option>الجنوب</option>
+              <option>الوسط</option>
+              <option>بوليتو</option>
+              <option>فايبكس</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>نوع المركبة</label>
+            <select id="modalUnitType" class="input">
+              <option>لا شي</option>
+              <option>سبيد يونت</option>
+              <option>دباب</option>
+              <option>الهلي</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>توزيع الوحدات</label>
+            <input id="modalUnitAssignment" class="input" />
+          </div>
+          <div class="field">
+            <label>شريك (كود)</label>
+            <input id="modalUnitPartner" class="input" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="unitModalCancel" class="btn btn-secondary">إلغاء</button>
+          <button id="unitModalSave" class="btn btn-primary">حفظ</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- مكتبة Tesseract من المجلد المحلي -->
   <script src="libs/tesseract.min.js"></script>
   <script src="script.js"></script>
 </body>
