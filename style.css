@@ -107,7 +107,7 @@ body {
   color: var(--muted);
 }
 
-/* Cards & grid */
+/* Grid & card */
 
 .grid {
   display: grid;
@@ -138,7 +138,7 @@ body {
   justify-content: space-between;
 }
 
-/* Inputs */
+/* Fields */
 
 .field {
   display: flex;
@@ -196,7 +196,6 @@ select:focus {
   color: var(--text);
 }
 
-/* ألوان مختلفة لكل نوع */
 .btn-primary {
   background: var(--accent);
   color: #0b1120;
@@ -222,7 +221,8 @@ select:focus {
   transition: var(--transition-fast);
 }
 
-/* Hover animation مميز لكل زر */
+/* Hover animation لكل زر */
+
 .btn-primary:hover {
   background: #22c08f;
   box-shadow: 0 0 0 1px rgba(34, 192, 143, 0.4);
@@ -246,7 +246,7 @@ select:focus {
   transform: scale(1.15);
 }
 
-/* Chip list */
+/* Chips */
 
 .chip-list {
   display: flex;
@@ -294,7 +294,7 @@ select:focus {
   color: var(--muted);
 }
 
-/* OCR جديد */
+/* OCR */
 
 .ocr-card {
   display: flex;
@@ -449,13 +449,15 @@ select:focus {
 .result-box {
   width: 100%;
   min-height: 180px;
-  resize: vertical;
+  resize: none;
+  overflow-y: hidden; /* بدون سكرول */
   background: #020617;
   border-radius: 16px;
   border: 1px solid var(--border);
   padding: 10px 11px;
   font-size: 12px;
   color: var(--text);
+  line-height: 1.5;
 }
 
 /* Toast */
